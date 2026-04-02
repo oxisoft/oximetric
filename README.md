@@ -70,19 +70,22 @@ OXI Metric helps you comply with **GDPR**, **CCPA**, **PIPEDA**, **LGPD**, and o
 
 ## Quick Start
 
-Get OXI Metric running in 30 seconds:
+Run the interactive installer — it will ask you a few questions, download the right config, and get you running:
 
 ```bash
-# Create environment file
-cat > .env << 'EOF'
-OXIMETRIC_ADMIN_USERNAME=admin
-OXIMETRIC_ADMIN_PASSWORD=your-secure-password
-OXIMETRIC_JWT_SECRET=change-this-to-a-random-string-at-least-32-chars
-EOF
+curl -fsSL https://raw.githubusercontent.com/oxisoft/oximetric/main/deploy/install.sh | bash
+```
 
-# Download and start
-curl -O https://raw.githubusercontent.com/oxisoft/oximetric/main/deploy/docker-compose.sqlite.yml
-docker compose -f docker-compose.sqlite.yml up -d
+The installer will:
+- Let you choose SQLite or PostgreSQL
+- Optionally enable auto-updates with Watchtower
+- Set up admin credentials and JWT secret
+- Create `docker-compose.yml` and `.env` ready to go
+
+Then start:
+
+```bash
+docker compose up -d
 ```
 
 Open **http://localhost:6940** and log in with your admin credentials.
