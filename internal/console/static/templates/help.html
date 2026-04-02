@@ -1,0 +1,249 @@
+<div class="card content-card p-4 mb-4">
+  <h5 class="mb-3">Getting Started with OXI Metric</h5>
+  <p class="text-muted">Integrate OXI Metric into your app in minutes. Choose your platform below, create a project token in the <a href="/projects">Projects</a> page, and start tracking events.</p>
+
+  <div class="alert alert-light border mt-3">
+    <strong>Server URL:</strong> <code>{{.Domain}}</code><br>
+    <small class="text-muted">This is your OXI Metric server endpoint. Use it in the SDK initialization below.</small>
+  </div>
+</div>
+
+<div class="card content-card p-4">
+  <ul class="nav nav-tabs" id="sdkTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="flutter-tab" data-bs-toggle="tab" data-bs-target="#flutter" type="button" role="tab">Flutter</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="android-tab" data-bs-toggle="tab" data-bs-target="#android" type="button" role="tab">Android</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="ios-tab" data-bs-toggle="tab" data-bs-target="#ios" type="button" role="tab">iOS</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="js-tab" data-bs-toggle="tab" data-bs-target="#javascript" type="button" role="tab">JavaScript</button>
+    </li>
+  </ul>
+
+  <div class="tab-content pt-3" id="sdkTabContent">
+
+    <!-- Flutter -->
+    <div class="tab-pane fade show active" id="flutter" role="tabpanel">
+      <h6>1. Install the SDK</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code># pubspec.yaml
+dependencies:
+  oximetric:
+    git:
+      url: https://github.com/oxisoft/oximetric-flutter-sdk.git</code></pre>
+      </div>
+
+      <h6 class="mt-4">2. Initialize</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>import 'package:oximetric/oximetric.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await OxiMetric.initialize(
+    serverUrl: '{{.Domain}}',
+    token: '&lt;your-project-token&gt;',
+  );
+
+  runApp(MyApp());
+}</code></pre>
+      </div>
+
+      <h6 class="mt-4">3. Track Events</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>// Track an event with typed properties
+OxiMetric.track('purchase', properties: {
+  'amount': 29.99,
+  'currency': 'USD',
+  'is_first_purchase': true,
+  'item_count': 3,
+});
+
+// Track a simple event
+OxiMetric.track('page_view');</code></pre>
+      </div>
+
+      <h6 class="mt-4">4. Identify Users (Optional)</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>// After user logs in — SDK hashes the identifier automatically
+OxiMetric.identify('user@example.com');
+
+// Opt out of tracking (e.g., user declines analytics)
+OxiMetric.optOut();
+
+// Opt back in
+OxiMetric.optIn();</code></pre>
+      </div>
+    </div>
+
+    <!-- Android -->
+    <div class="tab-pane fade" id="android" role="tabpanel">
+      <h6>1. Add Dependency</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>// build.gradle.kts
+dependencies {
+    implementation("io.oxisoft:oximetric-android:1.0.0")
+}</code></pre>
+      </div>
+
+      <h6 class="mt-4">2. Initialize</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>import io.oxisoft.oximetric.OxiMetric
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        OxiMetric.initialize(
+            context = applicationContext,
+            serverUrl = "{{.Domain}}",
+            token = "&lt;your-project-token&gt;"
+        )
+    }
+}</code></pre>
+      </div>
+
+      <h6 class="mt-4">3. Track Events</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.track("purchase", mapOf(
+    "amount" to 29.99,
+    "currency" to "USD",
+    "is_first_purchase" to true,
+    "item_count" to 3
+))
+
+OxiMetric.track("page_view")</code></pre>
+      </div>
+
+      <h6 class="mt-4">4. Identify Users (Optional)</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.identify("user@example.com")
+
+// Opt out / opt in
+OxiMetric.optOut()
+OxiMetric.optIn()</code></pre>
+      </div>
+    </div>
+
+    <!-- iOS -->
+    <div class="tab-pane fade" id="ios" role="tabpanel">
+      <h6>1. Add Package</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>// Swift Package Manager
+// Add package: https://github.com/oxisoft/oximetric-ios-sdk</code></pre>
+      </div>
+
+      <h6 class="mt-4">2. Initialize</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>import OxiMetric
+
+@main
+struct MyApp: App {
+    init() {
+        OxiMetric.initialize(
+            serverUrl: "{{.Domain}}",
+            token: "&lt;your-project-token&gt;"
+        )
+    }
+
+    var body: some Scene {
+        WindowGroup { ContentView() }
+    }
+}</code></pre>
+      </div>
+
+      <h6 class="mt-4">3. Track Events</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.track("purchase", properties: [
+    "amount": 29.99,
+    "currency": "USD",
+    "is_first_purchase": true,
+    "item_count": 3
+])
+
+OxiMetric.track("page_view")</code></pre>
+      </div>
+
+      <h6 class="mt-4">4. Identify Users (Optional)</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.identify("user@example.com")
+
+// Opt out / opt in
+OxiMetric.optOut()
+OxiMetric.optIn()</code></pre>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <div class="tab-pane fade" id="javascript" role="tabpanel">
+      <h6>1. Add Script</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>&lt;script src="https://cdn.oxisoft.io/oximetric.min.js"&gt;&lt;/script&gt;</code></pre>
+      </div>
+
+      <h6 class="mt-4">2. Initialize</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.init({
+  serverUrl: '{{.Domain}}',
+  token: '&lt;your-project-token&gt;',
+});</code></pre>
+      </div>
+
+      <h6 class="mt-4">3. Track Events</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.track('purchase', {
+  amount: { type: 'float', value: 29.99 },
+  currency: { type: 'string', value: 'USD' },
+  is_first_purchase: { type: 'bool', value: true },
+  item_count: { type: 'int', value: 3 },
+});
+
+OxiMetric.track('page_view');</code></pre>
+      </div>
+
+      <h6 class="mt-4">4. Identify Users (Optional)</h6>
+      <div class="code-block">
+        <button class="btn btn-sm btn-outline-secondary code-copy-btn" >Copy</button>
+        <pre><code>OxiMetric.identify('user@example.com');
+
+// Opt out / opt in
+OxiMetric.optOut();
+OxiMetric.optIn();</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card content-card p-4 mt-4">
+  <h6>API Reference</h6>
+  <p class="text-muted mb-2">All SDKs communicate with the following REST endpoints:</p>
+  <table class="table table-clean table-sm">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/api/v1/device</code></td><td>Register or update device info</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/v1/track</code></td><td>Send batch of events with properties</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/v1/identify</code></td><td>Link device to anonymous user</td></tr>
+    </tbody>
+  </table>
+  <p class="text-muted mt-2">All requests require the <code>X-Token</code> header with your project token.</p>
+</div>

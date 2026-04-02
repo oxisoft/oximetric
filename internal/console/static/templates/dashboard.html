@@ -1,0 +1,36 @@
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card stat-card p-3"><div class="stat-label">Active Devices</div><div class="stat-value" id="statDevices">—</div></div></div>
+  <div class="col-md-3"><div class="card stat-card p-3"><div class="stat-label">Total Events</div><div class="stat-value" id="statEvents">—</div></div></div>
+  <div class="col-md-3"><div class="card stat-card p-3"><div class="stat-label">Top Event</div><div class="stat-value" id="statTopEvent" style="font-size:1.2rem">—</div></div></div>
+  <div class="col-md-3"><div class="card stat-card p-3"><div class="stat-label">Top Country</div><div class="stat-value" id="statTopCountry" style="font-size:1.2rem">—</div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card content-card p-3">
+      <h6 class="mb-3">Events Over Time</h6>
+      <div style="position:relative;height:250px"><canvas id="eventsChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card content-card p-3">
+      <h6 class="mb-3">Top Events</h6>
+      <table class="table table-clean table-sm">
+        <thead><tr><th>Event</th><th class="text-end">Count</th></tr></thead>
+        <tbody id="topEventsTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card content-card p-3">
+      <h6 class="mb-3">Top Countries</h6>
+      <table class="table table-clean table-sm">
+        <thead><tr><th>Country</th><th class="text-end">Count</th></tr></thead>
+        <tbody id="topCountriesTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>

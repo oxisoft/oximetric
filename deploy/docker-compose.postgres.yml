@@ -1,0 +1,43 @@
+services:
+  oximetric:
+    image: ghcr.io/oxisoft/oximetric:latest
+    ports:
+      - "6940:6940"
+    environment:
+      OXIMETRIC_ADMIN_USERNAME: ${OXIMETRIC_ADMIN_USERNAME}
+      OXIMETRIC_ADMIN_PASSWORD: ${OXIMETRIC_ADMIN_PASSWORD}
+      OXIMETRIC_JWT_SECRET: ${OXIMETRIC_JWT_SECRET}
+      OXIMETRIC_DB_DRIVER: postgres
+      OXIMETRIC_DB_DSN: postgres://oximetric:${OXIMETRIC_DB_PASSWORD}@postgres:5432/oximetric?sslmode=disable
+      OXIMETRIC_GEOIP_DB_PATH: /data/dbip-city-lite.mmdb
+      OXIMETRIC_DOMAIN_NAME: ${OXIMETRIC_DOMAIN_NAME:-}
+    volumes:
+      - oximetric-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:6940/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: oximetric
+      POSTGRES_USER: oximetric
+      POSTGRES_PASSWORD: ${OXIMETRIC_DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oximetric"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  oximetric-data:
+  postgres-data:

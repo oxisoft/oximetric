@@ -1,0 +1,30 @@
+# Binary
+oximetric
+
+# Coverage
+coverage.out
+coverage.raw
+coverage.html
+
+# Dev database
+dev.db
+dev.db-journal
+dev.db-wal
+dev.db-shm
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GeoIP data (downloaded automatically)
+data/
+internal/geoip/testdata/test.mmdb
+
+# Env
+.env

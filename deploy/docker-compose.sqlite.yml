@@ -1,0 +1,24 @@
+services:
+  oximetric:
+    image: ghcr.io/oxisoft/oximetric:latest
+    ports:
+      - "6940:6940"
+    environment:
+      OXIMETRIC_ADMIN_USERNAME: ${OXIMETRIC_ADMIN_USERNAME}
+      OXIMETRIC_ADMIN_PASSWORD: ${OXIMETRIC_ADMIN_PASSWORD}
+      OXIMETRIC_JWT_SECRET: ${OXIMETRIC_JWT_SECRET}
+      OXIMETRIC_DB_DRIVER: sqlite
+      OXIMETRIC_DB_DSN: /data/oximetric.db
+      OXIMETRIC_GEOIP_DB_PATH: /data/dbip-city-lite.mmdb
+      OXIMETRIC_DOMAIN_NAME: ${OXIMETRIC_DOMAIN_NAME:-}
+    volumes:
+      - oximetric-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:6940/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  oximetric-data:

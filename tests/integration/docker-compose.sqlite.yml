@@ -1,0 +1,6 @@
+services:
+  integration-test:
+    build:
+      context: ../..
+      dockerfile: tests/integration/Dockerfile
+    command: ["go", "test", "-v", "-count=1", "-db=sqlite", "./tests/integration/"]
