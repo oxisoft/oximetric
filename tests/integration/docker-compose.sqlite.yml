@@ -3,4 +3,4 @@ services:
     build:
       context: ../..
       dockerfile: tests/integration/Dockerfile
-    command: ["go", "test", "-v", "-count=1", "-db=sqlite", "./tests/integration/"]
+    command: ["go", "test", "-v", "-count=1", "./tests/integration/", "-args", "-db=sqlite"]
