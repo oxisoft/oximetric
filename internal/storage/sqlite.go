@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/oxisoft/oximetric/internal/model"
@@ -179,8 +180,8 @@ func (s *SQLiteStore) ListProjects(ctx context.Context) ([]model.Project, error)
 
 func (s *SQLiteStore) CreateProjectToken(ctx context.Context, token *model.ProjectToken) error {
 	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO project_tokens (project_id, token, label, active) VALUES (?, ?, ?, ?)`,
-		token.ProjectID, token.Token, token.Label, token.Active,
+		`INSERT INTO project_tokens (project_id, token, label, active, allowed_origins) VALUES (?, ?, ?, ?, ?)`,
+		token.ProjectID, token.Token, token.Label, token.Active, encodeOrigins(token.AllowedOrigins),
 	)
 	if err != nil {
 		return err
@@ -195,18 +196,20 @@ func (s *SQLiteStore) CreateProjectToken(ctx context.Context, token *model.Proje
 
 func (s *SQLiteStore) GetProjectTokenByToken(ctx context.Context, token string) (*model.ProjectToken, error) {
 	var t model.ProjectToken
+	var origins string
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, project_id, token, label, active, created_at, disabled_at FROM project_tokens WHERE token = ?`, token,
-	).Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &t.CreatedAt, &t.DisabledAt)
+		`SELECT id, project_id, token, label, active, allowed_origins, created_at, disabled_at FROM project_tokens WHERE token = ?`, token,
+	).Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &origins, &t.CreatedAt, &t.DisabledAt)
 	if err != nil {
 		return nil, err
 	}
+	t.AllowedOrigins = decodeOrigins(origins)
 	return &t, nil
 }
 
 func (s *SQLiteStore) ListProjectTokens(ctx context.Context, projectID int) ([]model.ProjectToken, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, token, label, active, created_at, disabled_at FROM project_tokens WHERE project_id = ? ORDER BY created_at`, projectID,
+		`SELECT id, project_id, token, label, active, allowed_origins, created_at, disabled_at FROM project_tokens WHERE project_id = ? ORDER BY created_at`, projectID,
 	)
 	if err != nil {
 		return nil, err
@@ -215,9 +218,11 @@ func (s *SQLiteStore) ListProjectTokens(ctx context.Context, projectID int) ([]m
 	var tokens []model.ProjectToken
 	for rows.Next() {
 		var t model.ProjectToken
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &t.CreatedAt, &t.DisabledAt); err != nil {
+		var origins string
+		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &origins, &t.CreatedAt, &t.DisabledAt); err != nil {
 			return nil, err
 		}
+		t.AllowedOrigins = decodeOrigins(origins)
 		tokens = append(tokens, t)
 	}
 	return tokens, rows.Err()
@@ -225,8 +230,8 @@ func (s *SQLiteStore) ListProjectTokens(ctx context.Context, projectID int) ([]m
 
 func (s *SQLiteStore) UpdateProjectToken(ctx context.Context, token *model.ProjectToken) error {
 	_, err := s.db.ExecContext(ctx,
-		`UPDATE project_tokens SET label = ?, active = ?, disabled_at = ? WHERE id = ?`,
-		token.Label, token.Active, token.DisabledAt, token.ID,
+		`UPDATE project_tokens SET label = ?, active = ?, allowed_origins = ?, disabled_at = ? WHERE id = ?`,
+		token.Label, token.Active, encodeOrigins(token.AllowedOrigins), token.DisabledAt, token.ID,
 	)
 	return err
 }
@@ -584,6 +589,38 @@ func nullStr(s string) interface{} {
 		return nil
 	}
 	return s
+}
+
+func encodeOrigins(origins []string) string {
+	if len(origins) == 0 {
+		return ""
+	}
+	cleaned := make([]string, 0, len(origins))
+	for _, o := range origins {
+		o = strings.TrimSpace(o)
+		if o != "" {
+			cleaned = append(cleaned, o)
+		}
+	}
+	return strings.Join(cleaned, "\n")
+}
+
+func decodeOrigins(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, "\n")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func sqliteDateFormat(interval string) string {

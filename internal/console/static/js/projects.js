@@ -72,21 +72,29 @@ function loadTokens() {
       tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No tokens</td></tr>';
       return;
     }
-    tbody.innerHTML = tokens.map(t => `
+    tbody.innerHTML = tokens.map(t => {
+      const origins = (t.allowed_origins || []).map(o => UI.escapeHtml(o)).join('<br>') || '<span class="text-muted">— any —</span>';
+      const originsAttr = encodeURIComponent((t.allowed_origins || []).join('\n'));
+      return `
       <tr>
         <td>${UI.escapeHtml(t.label)}</td>
         <td><code>${t.token.substring(0,8)}...${t.token.substring(56)}</code></td>
+        <td><small>${origins}</small></td>
         <td><span class="badge bg-${t.active ? 'success' : 'secondary'}">${t.active ? 'Active' : 'Disabled'}</span></td>
         <td>${UI.formatDate(t.created_at)}</td>
         <td class="text-end">
+          <button class="btn btn-sm btn-outline-secondary btn-edit-token" data-id="${t.id}" data-label="${UI.escapeHtml(t.label)}" data-origins="${originsAttr}">Edit</button>
           ${t.active
-            ? `<button class="btn btn-sm btn-outline-warning btn-disable-token" data-id="${t.id}">Disable</button>`
-            : `<button class="btn btn-sm btn-outline-success btn-enable-token" data-id="${t.id}">Enable</button>`}
+            ? `<button class="btn btn-sm btn-outline-warning ms-1 btn-disable-token" data-id="${t.id}">Disable</button>`
+            : `<button class="btn btn-sm btn-outline-success ms-1 btn-enable-token" data-id="${t.id}">Enable</button>`}
           ${isAdmin ? `<button class="btn btn-sm btn-outline-danger ms-1 btn-delete-token" data-id="${t.id}">Delete</button>` : ''}
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
 
+    tbody.querySelectorAll('.btn-edit-token').forEach(el => {
+      el.addEventListener('click', () => openEditToken(parseInt(el.dataset.id), el.dataset.label, decodeURIComponent(el.dataset.origins)));
+    });
     tbody.querySelectorAll('.btn-disable-token').forEach(el => {
       el.addEventListener('click', () => disableToken(parseInt(el.dataset.id)));
     });
@@ -99,13 +107,50 @@ function loadTokens() {
   });
 }
 
+function parseOriginsTextarea(id) {
+  return document.getElementById(id).value
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function openEditToken(id, label, originsText) {
+  document.getElementById('editTokenId').value = id;
+  document.getElementById('editTokenLabel').value = label;
+  document.getElementById('editTokenOrigins').value = originsText;
+  new bootstrap.Modal(document.getElementById('editTokenModal')).show();
+}
+
+function saveEditToken() {
+  const id = parseInt(document.getElementById('editTokenId').value);
+  const label = document.getElementById('editTokenLabel').value.trim();
+  const allowed_origins = parseOriginsTextarea('editTokenOrigins');
+  API.put(`/projects/${selectedProjectId}/tokens/${id}`, { label, allowed_origins }).then(r => {
+    if (r.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('editTokenModal')).hide();
+      loadTokens();
+      UI.showToast('Token updated');
+    } else {
+      r.json().then(d => UI.showToast(d.error?.message || 'Error', 'danger'));
+    }
+  });
+}
+
 function createToken() {
   const label = document.getElementById('newTokenLabel').value.trim();
   if (!label) return;
-  API.post(`/projects/${selectedProjectId}/tokens`, { label }).then(r => API.json(r)).then(data => {
+  const allowed_origins = parseOriginsTextarea('newTokenOrigins');
+  API.post(`/projects/${selectedProjectId}/tokens`, { label, allowed_origins }).then(r => {
+    if (!r.ok) {
+      r.json().then(d => UI.showToast(d.error?.message || 'Error', 'danger'));
+      return;
+    }
+    return r.json();
+  }).then(data => {
     if (!data) return;
     bootstrap.Modal.getInstance(document.getElementById('createTokenModal')).hide();
     document.getElementById('newTokenLabel').value = '';
+    document.getElementById('newTokenOrigins').value = '';
     document.getElementById('newTokenValue').textContent = data.token;
     new bootstrap.Modal(document.getElementById('tokenCreatedModal')).show();
     loadTokens();
@@ -139,6 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ?.addEventListener('click', createProject);
   document.getElementById('createTokenModal')?.querySelector('.btn-primary')
     ?.addEventListener('click', createToken);
+  document.getElementById('editTokenModal')?.querySelector('.btn-primary')
+    ?.addEventListener('click', saveEditToken);
   document.getElementById('tokenCreatedModal')?.querySelector('.btn-primary')
     ?.addEventListener('click', copyToken);
 });

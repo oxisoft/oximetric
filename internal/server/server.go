@@ -45,17 +45,19 @@ func New(store storage.Store, authSvc *auth.Service, geo *geoip.Resolver, cfg *c
 	// Health
 	mux.HandleFunc("GET /api/v1/health", health.Health)
 
-	// Tracking API — token auth + rate limit
+	// Tracking API — CORS preflight + token auth + rate limit.
+	// CORS wraps TokenAuth so OPTIONS requests (which carry no X-Token) are
+	// answered before authentication. Per-token Origin enforcement happens
+	// inside TokenAuth on the real (POST) request.
 	trackingMux := http.NewServeMux()
 	trackingMux.HandleFunc("POST /api/v1/track", tracking.Track)
 	trackingMux.HandleFunc("POST /api/v1/device", tracking.Device)
 	trackingMux.HandleFunc("POST /api/v1/identify", tracking.Identify)
-	mux.Handle("POST /api/v1/track",
+	trackingHandler := middleware.CORS(
 		middleware.TokenAuth(store, middleware.RateLimit(1000, trackingMux)))
-	mux.Handle("POST /api/v1/device",
-		middleware.TokenAuth(store, middleware.RateLimit(1000, trackingMux)))
-	mux.Handle("POST /api/v1/identify",
-		middleware.TokenAuth(store, middleware.RateLimit(1000, trackingMux)))
+	mux.Handle("/api/v1/track", trackingHandler)
+	mux.Handle("/api/v1/device", trackingHandler)
+	mux.Handle("/api/v1/identify", trackingHandler)
 
 	// Auth API — login with rate limit, no JWT
 	mux.Handle("POST /api/v1/auth/login",
@@ -84,6 +86,8 @@ func New(store storage.Store, authSvc *auth.Service, geo *geoip.Resolver, cfg *c
 		middleware.RequireRole("manager", http.HandlerFunc(projects.ListTokens)))
 	jwtMux.Handle("POST /api/v1/projects/{id}/tokens",
 		middleware.RequireRole("manager", http.HandlerFunc(projects.CreateToken)))
+	jwtMux.Handle("PUT /api/v1/projects/{id}/tokens/{token_id}",
+		middleware.RequireRole("manager", http.HandlerFunc(projects.UpdateToken)))
 	jwtMux.Handle("PUT /api/v1/projects/{id}/tokens/{token_id}/disable",
 		middleware.RequireRole("manager", http.HandlerFunc(projects.DisableToken)))
 	jwtMux.Handle("PUT /api/v1/projects/{id}/tokens/{token_id}/enable",

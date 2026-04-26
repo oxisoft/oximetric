@@ -161,25 +161,27 @@ func (s *PostgresStore) ListProjects(ctx context.Context) ([]model.Project, erro
 
 func (s *PostgresStore) CreateProjectToken(ctx context.Context, token *model.ProjectToken) error {
 	return s.db.QueryRowContext(ctx,
-		`INSERT INTO project_tokens (project_id, token, label, active) VALUES ($1, $2, $3, $4) RETURNING id`,
-		token.ProjectID, token.Token, token.Label, token.Active,
+		`INSERT INTO project_tokens (project_id, token, label, active, allowed_origins) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		token.ProjectID, token.Token, token.Label, token.Active, encodeOrigins(token.AllowedOrigins),
 	).Scan(&token.ID)
 }
 
 func (s *PostgresStore) GetProjectTokenByToken(ctx context.Context, token string) (*model.ProjectToken, error) {
 	var t model.ProjectToken
+	var origins string
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, project_id, token, label, active, created_at, disabled_at FROM project_tokens WHERE token = $1`, token,
-	).Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &t.CreatedAt, &t.DisabledAt)
+		`SELECT id, project_id, token, label, active, allowed_origins, created_at, disabled_at FROM project_tokens WHERE token = $1`, token,
+	).Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &origins, &t.CreatedAt, &t.DisabledAt)
 	if err != nil {
 		return nil, err
 	}
+	t.AllowedOrigins = decodeOrigins(origins)
 	return &t, nil
 }
 
 func (s *PostgresStore) ListProjectTokens(ctx context.Context, projectID int) ([]model.ProjectToken, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, token, label, active, created_at, disabled_at FROM project_tokens WHERE project_id = $1 ORDER BY created_at`, projectID,
+		`SELECT id, project_id, token, label, active, allowed_origins, created_at, disabled_at FROM project_tokens WHERE project_id = $1 ORDER BY created_at`, projectID,
 	)
 	if err != nil {
 		return nil, err
@@ -188,9 +190,11 @@ func (s *PostgresStore) ListProjectTokens(ctx context.Context, projectID int) ([
 	var tokens []model.ProjectToken
 	for rows.Next() {
 		var t model.ProjectToken
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &t.CreatedAt, &t.DisabledAt); err != nil {
+		var origins string
+		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Token, &t.Label, &t.Active, &origins, &t.CreatedAt, &t.DisabledAt); err != nil {
 			return nil, err
 		}
+		t.AllowedOrigins = decodeOrigins(origins)
 		tokens = append(tokens, t)
 	}
 	return tokens, rows.Err()
@@ -198,8 +202,8 @@ func (s *PostgresStore) ListProjectTokens(ctx context.Context, projectID int) ([
 
 func (s *PostgresStore) UpdateProjectToken(ctx context.Context, token *model.ProjectToken) error {
 	_, err := s.db.ExecContext(ctx,
-		`UPDATE project_tokens SET label = $1, active = $2, disabled_at = $3 WHERE id = $4`,
-		token.Label, token.Active, token.DisabledAt, token.ID,
+		`UPDATE project_tokens SET label = $1, active = $2, allowed_origins = $3, disabled_at = $4 WHERE id = $5`,
+		token.Label, token.Active, encodeOrigins(token.AllowedOrigins), token.DisabledAt, token.ID,
 	)
 	return err
 }

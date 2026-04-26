@@ -10,13 +10,14 @@ type Project struct {
 }
 
 type ProjectToken struct {
-	ID         int        `json:"id"`
-	ProjectID  int        `json:"project_id"`
-	Token      string     `json:"token"`
-	Label      string     `json:"label"`
-	Active     bool       `json:"active"`
-	CreatedAt  time.Time  `json:"created_at"`
-	DisabledAt *time.Time `json:"disabled_at,omitempty"`
+	ID             int        `json:"id"`
+	ProjectID      int        `json:"project_id"`
+	Token          string     `json:"token"`
+	Label          string     `json:"label"`
+	Active         bool       `json:"active"`
+	AllowedOrigins []string   `json:"allowed_origins"`
+	CreatedAt      time.Time  `json:"created_at"`
+	DisabledAt     *time.Time `json:"disabled_at,omitempty"`
 }
 
 type ConsoleUser struct {
@@ -156,7 +157,13 @@ type UpdateProjectRequest struct {
 }
 
 type CreateTokenRequest struct {
-	Label string `json:"label"`
+	Label          string   `json:"label"`
+	AllowedOrigins []string `json:"allowed_origins"`
+}
+
+type UpdateTokenRequest struct {
+	Label          *string   `json:"label,omitempty"`
+	AllowedOrigins *[]string `json:"allowed_origins,omitempty"`
 }
 
 type CreateUserRequest struct {

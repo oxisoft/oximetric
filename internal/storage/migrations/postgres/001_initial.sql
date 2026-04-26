@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS project_tokens (
     token TEXT NOT NULL UNIQUE,
     label TEXT NOT NULL DEFAULT '',
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    allowed_origins TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     disabled_at TIMESTAMP
 );

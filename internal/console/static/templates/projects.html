@@ -19,7 +19,7 @@
   </div>
   <div class="card content-card p-3">
     <table class="table table-clean table-sm">
-      <thead><tr><th>Label</th><th>Token</th><th>Status</th><th>Created</th><th></th></tr></thead>
+      <thead><tr><th>Label</th><th>Token</th><th>Allowed Origins</th><th>Status</th><th>Created</th><th></th></tr></thead>
       <tbody id="tokensTable"></tbody>
     </table>
   </div>
@@ -41,9 +41,30 @@
   <div class="modal-dialog"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title">New Token</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-      <div class="mb-3"><label class="form-label">Label</label><input type="text" id="newTokenLabel" class="form-control" placeholder="e.g. v1.0, iOS prod"></div>
+      <div class="mb-3"><label class="form-label">Label</label><input type="text" id="newTokenLabel" class="form-control" placeholder="e.g. website, iOS prod"></div>
+      <div class="mb-2">
+        <label class="form-label">Allowed Origins <small class="text-muted">(one per line, empty = no restriction)</small></label>
+        <textarea id="newTokenOrigins" class="form-control" rows="3" placeholder="https://example.com&#10;https://*.example.com"></textarea>
+        <small class="text-muted">Required for browser/JS use. Supports <code>*</code> (any), <code>https://*.example.com</code> wildcards, or exact origins.</small>
+      </div>
     </div>
     <div class="modal-footer"><button class="btn btn-primary">Create</button></div>
+  </div></div>
+</div>
+
+<!-- Edit Token Modal -->
+<div class="modal fade" id="editTokenModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Edit Token</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editTokenId">
+      <div class="mb-3"><label class="form-label">Label</label><input type="text" id="editTokenLabel" class="form-control"></div>
+      <div class="mb-2">
+        <label class="form-label">Allowed Origins <small class="text-muted">(one per line, empty = no restriction)</small></label>
+        <textarea id="editTokenOrigins" class="form-control" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary">Save</button></div>
   </div></div>
 </div>
 

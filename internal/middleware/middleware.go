@@ -14,6 +14,10 @@ import (
 	"github.com/oxisoft/oximetric/internal/storage"
 )
 
+const corsMaxAge = "86400" // 24h
+const corsAllowedHeaders = "X-Token, Content-Type"
+const corsAllowedMethods = "POST, OPTIONS"
+
 type contextKey string
 
 const (
@@ -58,9 +62,69 @@ func TokenAuth(store storage.Store, next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "token is disabled")
 			return
 		}
+		// Enforce per-token allowed origins. Empty list = no restriction (server-side / mobile SDK).
+		origin := r.Header.Get("Origin")
+		if len(pt.AllowedOrigins) > 0 {
+			if !matchOrigin(pt.AllowedOrigins, origin) {
+				writeError(w, http.StatusForbidden, "FORBIDDEN", "origin not allowed for this token")
+				return
+			}
+			// Echo the matched origin so the browser accepts the response.
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+		}
 		ctx := context.WithValue(r.Context(), ProjectIDKey, pt.ProjectID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// CORS handles preflight (OPTIONS) requests for tracking endpoints.
+// It responds with permissive headers because the actual security check
+// happens in TokenAuth on the real request (which validates Origin against
+// the token's allowed list). Without this middleware, browsers cannot
+// preflight cross-origin POSTs.
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if r.Method == http.MethodOptions && origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Methods", corsAllowedMethods)
+			w.Header().Set("Access-Control-Allow-Headers", corsAllowedHeaders)
+			w.Header().Set("Access-Control-Max-Age", corsMaxAge)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// matchOrigin returns true if origin is in allowed.
+// Supports exact match, the literal "*", and "scheme://*.host" wildcards.
+func matchOrigin(allowed []string, origin string) bool {
+	if origin == "" {
+		return false
+	}
+	for _, a := range allowed {
+		if a == "*" {
+			return true
+		}
+		if a == origin {
+			return true
+		}
+		if strings.Contains(a, "://*.") {
+			scheme := a[:strings.Index(a, "://")]
+			suffix := a[strings.Index(a, "://*.")+len("://*."):]
+			prefix := scheme + "://"
+			if strings.HasPrefix(origin, prefix) {
+				host := strings.TrimPrefix(origin, prefix)
+				if host == suffix || strings.HasSuffix(host, "."+suffix) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func JWTAuth(svc *auth.Service, next http.Handler) http.Handler {

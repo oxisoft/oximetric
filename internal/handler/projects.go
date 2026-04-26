@@ -136,17 +136,72 @@ func (h *ProjectsHandler) CreateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	origins, err := normalizeOrigins(req.AllowedOrigins)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
 	token := &model.ProjectToken{
-		ProjectID: id,
-		Token:     tokenStr,
-		Label:     req.Label,
-		Active:    true,
+		ProjectID:      id,
+		Token:          tokenStr,
+		Label:          req.Label,
+		Active:         true,
+		AllowedOrigins: origins,
 	}
 	if err := h.store.CreateProjectToken(r.Context(), token); err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create token")
 		return
 	}
 	writeJSON(w, http.StatusCreated, token)
+}
+
+func (h *ProjectsHandler) UpdateToken(w http.ResponseWriter, r *http.Request) {
+	tokenID, err := pathInt(r, "token_id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "invalid token id")
+		return
+	}
+	projectID, _ := pathInt(r, "id")
+
+	tokens, err := h.store.ListProjectTokens(r.Context(), projectID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to find token")
+		return
+	}
+	var found *model.ProjectToken
+	for i := range tokens {
+		if tokens[i].ID == tokenID {
+			found = &tokens[i]
+			break
+		}
+	}
+	if found == nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "token not found")
+		return
+	}
+
+	var req model.UpdateTokenRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "invalid request body")
+		return
+	}
+	if req.Label != nil {
+		found.Label = *req.Label
+	}
+	if req.AllowedOrigins != nil {
+		origins, err := normalizeOrigins(*req.AllowedOrigins)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+			return
+		}
+		found.AllowedOrigins = origins
+	}
+	if err := h.store.UpdateProjectToken(r.Context(), found); err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update token")
+		return
+	}
+	writeJSON(w, http.StatusOK, found)
 }
 
 func (h *ProjectsHandler) DisableToken(w http.ResponseWriter, r *http.Request) {
