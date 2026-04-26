@@ -52,6 +52,7 @@ Cloud analytics platforms process your users' data on servers you don't control,
 
 ---
 
+
 ## Privacy & Compliance
 
 OXI Metric is built for teams that take user privacy seriously:
